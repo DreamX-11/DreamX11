@@ -33,16 +33,21 @@ def webhook():
             chat_id = data["message"]["chat"]["id"]
             text = data["message"].get("text", "").strip().lower()
 
-            commands = {
-                "/start": welcome_text(),
-                "/team": generate_chatgpt_response(team_prompt()),
-                "/pitch": pitch_weather_report(),
-                "/captain": generate_chatgpt_response(captain_prompt()),
-                "/tips": generate_chatgpt_response(tips_prompt()),
-                "/preview": generate_chatgpt_response(preview_prompt())
-            }
+            if text == "/start":
+                response = welcome_text()
+            elif text == "/pitch":
+                response = pitch_weather_report()
+            elif text == "/team":
+                response = generate_chatgpt_response(team_prompt())
+            elif text == "/captain":
+                response = generate_chatgpt_response(captain_prompt())
+            elif text == "/tips":
+                response = generate_chatgpt_response(tips_prompt())
+            elif text == "/preview":
+                response = generate_chatgpt_response(preview_prompt())
+            else:
+                response = "❌ Please type /team, /pitch, /captain, /tips or /preview"
 
-            response = commands.get(text, "❌ Please type /team, /pitch, /captain, /tips or /preview")
             send_message(chat_id, response)
 
         return "OK", 200
@@ -51,7 +56,7 @@ def webhook():
         print("Error in webhook:", e)
         return "Internal Server Error", 500
 
-# ChatGPT response generator (NO API KEY needed)
+# ChatGPT response generator (SAFE)
 def generate_chatgpt_response(prompt):
     payload = {
         "model": "gpt-3.5-turbo",
@@ -63,7 +68,10 @@ def generate_chatgpt_response(prompt):
         res = requests.post(CHATGPT_URL, json=payload, timeout=15)
         data = res.json()
         print("LLM Response:", data)
-        return data["choices"][0]["message"]["content"]
+        if "choices" in data:
+            return data["choices"][0]["message"]["content"]
+        else:
+            return "⚠️ GPT did not return a valid response. Try again later."
     except Exception as e:
         return f"⚠️ Error getting response: {e}"
 
