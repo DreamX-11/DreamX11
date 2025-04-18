@@ -26,24 +26,31 @@ def home():
 # Telegram webhook handler
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    data = request.get_json()
-    if "message" in data:
-        chat_id = data["message"]["chat"]["id"]
-        text = data["message"].get("text", "").strip().lower()
+    try:
+        data = request.get_json()
+        print("Received data:", data)  # Debug log
 
-        commands = {
-            "/start": welcome_text(),
-            "/team": generate_chatgpt_response(team_prompt()),
-            "/pitch": pitch_weather_report(),
-            "/captain": generate_chatgpt_response(captain_prompt()),
-            "/tips": generate_chatgpt_response(tips_prompt()),
-            "/preview": generate_chatgpt_response(preview_prompt())
-        }
+        if "message" in data:
+            chat_id = data["message"]["chat"]["id"]
+            text = data["message"].get("text", "").strip().lower()
 
-        response = commands.get(text, "❌ Please type /team, /pitch, /captain, /tips or /preview")
-        send_message(chat_id, response)
+            commands = {
+                "/start": welcome_text(),
+                "/team": generate_chatgpt_response(team_prompt()),
+                "/pitch": pitch_weather_report(),
+                "/captain": generate_chatgpt_response(captain_prompt()),
+                "/tips": generate_chatgpt_response(tips_prompt()),
+                "/preview": generate_chatgpt_response(preview_prompt())
+            }
 
-    return "OK", 200
+            response = commands.get(text, "❌ Please type /team, /pitch, /captain, /tips or /preview")
+            send_message(chat_id, response)
+
+        return "OK", 200
+
+    except Exception as e:
+        print("Error in webhook:", e)  # Show full error
+        return "Internal Server Error", 500
 
 # ChatGPT Response Generator
 def generate_chatgpt_response(prompt):
@@ -94,7 +101,7 @@ def preview_prompt():
     return (
         "Short preview for today's IPL match:\n"
         "- Head-to-head\n"
-        - "Top batters/bowlers\n"
+        "- Top batters/bowlers\n"
         "- Probable openers\n"
         "- Which team has an edge"
     )
