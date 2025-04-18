@@ -5,8 +5,7 @@ import os
 app = Flask(__name__)
 
 TOKEN = "7594223959:AAEoJ31lf-L5hlRkCyqtIXxIzPxR0teXAl8"
-CHATGPT_API_KEY = "d521c890-1b75-11f0-a0dc-f72cb9db58e1"
-CHATGPT_URL = "https://api.chatanywhere.tech/v1/chat/completions"
+CHATGPT_URL = "https://free.churchless.tech/v1/chat/completions"  # FREE endpoint
 
 # Send message to Telegram
 def send_message(chat_id, text, parse_mode="Markdown"):
@@ -28,7 +27,7 @@ def home():
 def webhook():
     try:
         data = request.get_json()
-        print("Received data:", data)  # Debug log
+        print("Received data:", data)
 
         if "message" in data:
             chat_id = data["message"]["chat"]["id"]
@@ -49,14 +48,11 @@ def webhook():
         return "OK", 200
 
     except Exception as e:
-        print("Error in webhook:", e)  # Show full error
+        print("Error in webhook:", e)
         return "Internal Server Error", 500
 
-# ChatGPT Response Generator
+# ChatGPT response generator (NO API KEY needed)
 def generate_chatgpt_response(prompt):
-    headers = {
-        "Authorization": f"Bearer {CHATGPT_API_KEY}"
-    }
     payload = {
         "model": "gpt-3.5-turbo",
         "messages": [{"role": "user", "content": prompt}],
@@ -64,8 +60,9 @@ def generate_chatgpt_response(prompt):
     }
 
     try:
-        res = requests.post(CHATGPT_URL, json=payload, headers=headers, timeout=10)
+        res = requests.post(CHATGPT_URL, json=payload, timeout=15)
         data = res.json()
+        print("LLM Response:", data)
         return data["choices"][0]["message"]["content"]
     except Exception as e:
         return f"⚠️ Error getting response: {e}"
