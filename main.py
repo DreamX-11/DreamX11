@@ -44,7 +44,7 @@ def webhook():
 
     return "OK", 200
 
-# PROMPTS SECTION
+# --- PROMPTS SECTION ---
 def team_prompt():
     return (
         "Generate a Dream11 fantasy cricket team for today's IPL match. Include:\n"
@@ -66,8 +66,8 @@ def tips_prompt():
     return (
         "Give match prediction and tips for today's IPL match. Mention:\n"
         "- Winning team prediction\n"
-        - Key players to watch\n"
-        - Pitch & weather impact\n"
+        "- Key players to watch\n"
+        "- Pitch & weather impact\n"
         "- Strategy tips for fantasy users"
     )
 
@@ -80,7 +80,7 @@ def preview_prompt():
         "- Who has edge today"
     )
 
-# STATIC PITCH REPORT
+# --- STATIC PITCH REPORT ---
 def pitch_weather_report():
     return (
         "🏟 *Venue:* M. Chinnaswamy Stadium, Bengaluru\n"
@@ -89,7 +89,7 @@ def pitch_weather_report():
         "✅ *Fantasy Tip:* Pick top-order batters and death-over bowlers"
     )
 
-# CHATGPT FETCH FUNCTION
+# --- CHATGPT CALL ---
 def generate_chatgpt_response(prompt):
     headers = {
         "Authorization": f"Bearer {CHATGPT_API_KEY}"
@@ -101,7 +101,7 @@ def generate_chatgpt_response(prompt):
 
     return res.json()["choices"][0]["message"]["content"]
 
-# WELCOME MESSAGE
+# --- WELCOME TEXT ---
 def welcome_text():
     return (
         "*Welcome to DreamX_11 – Your Fantasy Cricket Guru!*\n\n"
