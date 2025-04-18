@@ -5,7 +5,11 @@ import os
 app = Flask(__name__)
 
 TOKEN = "7594223959:AAEoJ31lf-L5hlRkCyqtIXxIzPxR0teXAl8"
-CHATGPT_URL = "https://free.churchless.tech/v1/chat/completions"  # FREE endpoint
+CHATGPT_URL = "https://free.churchless.tech/v1/chat/completions"
+HEADERS = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer free"  # Required by churchless.tech
+}
 
 # Send message to Telegram
 def send_message(chat_id, text, parse_mode="Markdown"):
@@ -56,7 +60,7 @@ def webhook():
         print("Error in webhook:", e)
         return "Internal Server Error", 500
 
-# ChatGPT response generator (SAFE)
+# ChatGPT response generator using free.churchless.tech
 def generate_chatgpt_response(prompt):
     payload = {
         "model": "gpt-3.5-turbo",
@@ -65,7 +69,7 @@ def generate_chatgpt_response(prompt):
     }
 
     try:
-        res = requests.post(CHATGPT_URL, json=payload, timeout=15)
+        res = requests.post(CHATGPT_URL, headers=HEADERS, json=payload, timeout=15)
         data = res.json()
         print("LLM Response:", data)
         if "choices" in data:
