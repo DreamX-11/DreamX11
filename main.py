@@ -6,7 +6,9 @@ app = Flask(__name__)
 
 TOKEN = "7594223959:AAEoJ31lf-L5hlRkCyqtIXxIzPxR0teXAl8"
 CHATGPT_API_KEY = "d521c890-1b75-11f0-a0dc-f72cb9db58e1"
+CHATGPT_URL = "https://api.chatanywhere.tech/v1/chat/completions"
 
+# Send message to Telegram
 def send_message(chat_id, text, parse_mode="Markdown"):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {
@@ -16,104 +18,110 @@ def send_message(chat_id, text, parse_mode="Markdown"):
     }
     requests.post(url, json=payload)
 
+# Home route
 @app.route('/')
 def home():
     return "DreamX_11 Bot is Online - Dream Big, Win Bigger!"
 
+# Telegram webhook handler
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.get_json()
     if "message" in data:
         chat_id = data["message"]["chat"]["id"]
-        text = data["message"].get("text", "").lower()
+        text = data["message"].get("text", "").strip().lower()
 
-        if "/start" in text:
-            send_message(chat_id, welcome_text())
-        elif "/team" in text:
-            send_message(chat_id, generate_chatgpt_response(team_prompt()))
-        elif "/pitch" in text:
-            send_message(chat_id, pitch_weather_report())
-        elif "/captain" in text:
-            send_message(chat_id, generate_chatgpt_response(captain_prompt()))
-        elif "/tips" in text:
-            send_message(chat_id, generate_chatgpt_response(tips_prompt()))
-        elif "/preview" in text:
-            send_message(chat_id, generate_chatgpt_response(preview_prompt()))
-        else:
-            send_message(chat_id, "Please type /team, /pitch, /captain, /tips or /preview")
+        commands = {
+            "/start": welcome_text(),
+            "/team": generate_chatgpt_response(team_prompt()),
+            "/pitch": pitch_weather_report(),
+            "/captain": generate_chatgpt_response(captain_prompt()),
+            "/tips": generate_chatgpt_response(tips_prompt()),
+            "/preview": generate_chatgpt_response(preview_prompt())
+        }
+
+        response = commands.get(text, "❌ Please type /team, /pitch, /captain, /tips or /preview")
+        send_message(chat_id, response)
 
     return "OK", 200
 
-# --- PROMPTS SECTION ---
+# ChatGPT Response Generator
+def generate_chatgpt_response(prompt):
+    headers = {
+        "Authorization": f"Bearer {CHATGPT_API_KEY}"
+    }
+    payload = {
+        "model": "gpt-3.5-turbo",
+        "messages": [{"role": "user", "content": prompt}],
+        "stream": False
+    }
+
+    try:
+        res = requests.post(CHATGPT_URL, json=payload, headers=headers, timeout=10)
+        data = res.json()
+        return data["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"⚠️ Error getting response: {e}"
+
+# Prompts
 def team_prompt():
     return (
-        "Generate a Dream11 fantasy cricket team for today's IPL match. Include:\n"
-        "- Player categories: WK, BAT, AR, BOWL\n"
-        "- Captain (C) & Vice Captain (VC)\n"
-        "- Player form (last 5 matches)\n"
+        "Generate a Dream11 fantasy team for today's IPL match. Include:\n"
+        "- WK, BAT, AR, BOWL\n"
+        "- Captain & Vice Captain\n"
+        "- Form (last 5 matches)\n"
         "- Country flags & emojis\n"
-        "- Team cost and balance\n"
+        "- Budget used\n"
         "- Smart formatting for Telegram"
     )
 
 def captain_prompt():
     return (
-        "Suggest the top 3 Captain & Vice Captain picks for today's IPL Dream11 match.\n"
-        "Include reason (form, pitch, matchup) + emoji formatting."
+        "Suggest the top 3 Captain & Vice Captain picks for today's IPL match.\n"
+        "Explain with pitch, form, opposition, and include emoji formatting."
     )
 
 def tips_prompt():
     return (
-        "Give match prediction and tips for today's IPL match. Mention:\n"
-        "- Winning team prediction\n"
-        "- Key players to watch\n"
-        "- Pitch & weather impact\n"
-        "- Strategy tips for fantasy users"
+        "Give match prediction & fantasy tips for today's IPL game:\n"
+        "- Who might win?\n"
+        "- Key fantasy players\n"
+        "- Pitch/weather effects\n"
+        "- Strategy tips"
     )
 
 def preview_prompt():
     return (
-        "Give a short, exciting match preview for today's IPL match.\n"
-        "- Head-to-head record\n"
-        "- Top batters & bowlers\n"
-        "- Probable opening pairs\n"
-        "- Who has edge today"
+        "Short preview for today's IPL match:\n"
+        "- Head-to-head\n"
+        - "Top batters/bowlers\n"
+        "- Probable openers\n"
+        "- Which team has an edge"
     )
 
-# --- STATIC PITCH REPORT ---
+# Static pitch report
 def pitch_weather_report():
     return (
         "🏟 *Venue:* M. Chinnaswamy Stadium, Bengaluru\n"
-        "🧱 *Pitch:* Flat and high scoring – Average 1st innings score: 190+\n"
+        "🧱 *Pitch:* Flat, high scoring – Avg 1st Innings: 190+\n"
         "🌤 *Weather:* Clear skies, 32°C, no rain\n"
-        "✅ *Fantasy Tip:* Pick top-order batters and death-over bowlers"
+        "✅ *Fantasy Tip:* Focus on top-order batters & death bowlers"
     )
 
-# --- CHATGPT CALL ---
-def generate_chatgpt_response(prompt):
-    headers = {
-        "Authorization": f"Bearer {CHATGPT_API_KEY}"
-    }
-    res = requests.post("https://api.chatanywhere.tech/v1/chat/completions", json={
-        "model": "gpt-3.5-turbo",
-        "messages": [{"role": "user", "content": prompt}]
-    }, headers=headers)
-
-    return res.json()["choices"][0]["message"]["content"]
-
-# --- WELCOME TEXT ---
+# Welcome message
 def welcome_text():
     return (
         "*Welcome to DreamX_11 – Your Fantasy Cricket Guru!*\n\n"
         "Use these commands:\n"
-        "▶️ /team – Get today's best AI Dream11 team\n"
-        "🌦 /pitch – Pitch & Weather insights\n"
-        "🎯 /captain – C/VC recommendations\n"
-        "📊 /preview – Match Preview & H2H\n"
-        "🔥 /tips – Pro fantasy advice\n\n"
-        "_Powered by ChatGPT + Cricket Stats + Your Luck_"
+        "▶️ /team – AI-based Dream11 Team\n"
+        "🌦 /pitch – Pitch & Weather\n"
+        "🎯 /captain – C/VC Picks\n"
+        "📊 /preview – Match Preview\n"
+        "🔥 /tips – Expert Fantasy Tips\n\n"
+        "_Powered by AI + Cricket Stats + Your Luck_"
     )
 
+# Run server
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
