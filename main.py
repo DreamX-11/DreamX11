@@ -4,29 +4,30 @@ import os
 
 app = Flask(__name__)
 
+# Telegram & ChatGPT API details
 TOKEN = "7594223959:AAEoJ31lf-L5hlRkCyqtIXxIzPxR0teXAl8"
+TELEGRAM_API_URL = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
 CHATGPT_URL = "https://free.churchless.tech/v1/chat/completions"
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer free"  # Required by churchless.tech
+    "Authorization": "Bearer free"
 }
 
 # Send message to Telegram
 def send_message(chat_id, text, parse_mode="Markdown"):
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {
         "chat_id": chat_id,
         "text": text,
         "parse_mode": parse_mode
     }
-    requests.post(url, json=payload)
+    requests.post(TELEGRAM_API_URL, json=payload)
 
 # Home route
 @app.route('/')
 def home():
     return "DreamX_11 Bot is Online - Dream Big, Win Bigger!"
 
-# Telegram webhook handler
+# Webhook for Telegram
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
@@ -37,17 +38,18 @@ def webhook():
             chat_id = data["message"]["chat"]["id"]
             text = data["message"].get("text", "").strip().lower()
 
-            if text == "/start":
+            # Routing based on user command
+            if "/start" in text:
                 response = welcome_text()
-            elif text == "/pitch":
+            elif "/pitch" in text:
                 response = pitch_weather_report()
-            elif text == "/team":
+            elif "/team" in text:
                 response = generate_chatgpt_response(team_prompt())
-            elif text == "/captain":
+            elif "/captain" in text:
                 response = generate_chatgpt_response(captain_prompt())
-            elif text == "/tips":
+            elif "/tips" in text:
                 response = generate_chatgpt_response(tips_prompt())
-            elif text == "/preview":
+            elif "/preview" in text:
                 response = generate_chatgpt_response(preview_prompt())
             else:
                 response = "❌ Please type /team, /pitch, /captain, /tips or /preview"
@@ -60,7 +62,7 @@ def webhook():
         print("Error in webhook:", e)
         return "Internal Server Error", 500
 
-# ChatGPT response generator using free.churchless.tech
+# Generate response from ChatGPT API
 def generate_chatgpt_response(prompt):
     payload = {
         "model": "gpt-3.5-turbo",
@@ -71,12 +73,13 @@ def generate_chatgpt_response(prompt):
     try:
         res = requests.post(CHATGPT_URL, headers=HEADERS, json=payload, timeout=15)
         data = res.json()
-        print("LLM Response:", data)
+        print("GPT Response:", data)
         if "choices" in data:
             return data["choices"][0]["message"]["content"]
         else:
             return "⚠️ GPT did not return a valid response. Try again later."
     except Exception as e:
+        print("GPT Error:", e)
         return f"⚠️ Error getting response: {e}"
 
 # Prompts
@@ -137,7 +140,7 @@ def welcome_text():
         "_Powered by AI + Cricket Stats + Your Luck_"
     )
 
-# Run server
+# Run app
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
